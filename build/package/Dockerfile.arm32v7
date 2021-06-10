@@ -1,5 +1,6 @@
 # FROM arm32v7/alpine:latest
-FROM golang:1.15.5-alpine3.12
+# FROM golang:1.15.5-alpine3.12
+FROM arm32v7/golang:alpine3.12
 
 # Copy downloaded architecture emulation static binary
 COPY qemu-arm-static /usr/bin/
