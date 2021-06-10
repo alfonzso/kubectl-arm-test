@@ -54,7 +54,7 @@ do
     if [[ ! -f qemu-${QEMU_ARCH}-static ]]; then
         echo "[***] Downloading ${QEMU_DOWNLOAD_URL}/${QEMU_LATEST_TAG}/x86_64_qemu-${QEMU_ARCH}-static.tar.gz"
         curl -sL "${QEMU_DOWNLOAD_URL}/${QEMU_LATEST_TAG}/x86_64_qemu-${QEMU_ARCH}-static.tar.gz" \
-            | tar xzv
+            | tar xzvf -
     else
         echo "[***] qemu-${QEMU_ARCH}-static already exists. Skipping download."
     fi
