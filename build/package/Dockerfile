@@ -1,4 +1,4 @@
-FROM golang:1.15.5-alpine3.12
+FROM golang:alpine3.12
 
 ENV K8S_VERSION=1.21
 ENV K8S_SOURCE=https://github.com/kubernetes/kubernetes
