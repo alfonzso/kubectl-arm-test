@@ -3,11 +3,17 @@ FROM arm64v8/golang:alpine3.12
 # Copy downloaded architecture emulation static binary
 COPY qemu-arm-static /usr/bin/
 
+ARG VERSION
 ENV K8S_VERSION=1.21
 ENV K8S_SOURCE=https://github.com/kubernetes/kubernetes
 
+RUN apk -q --no-cache add bash
+SHELL ["/bin/bash", "-c"]
+
 RUN set -ex                                                  \
-  && apk -q --no-cache add alpine-sdk bash rsync             \
+  && apk -q --no-cache add alpine-sdk rsync                  \
   && mkdir -p $GOPATH/src/k8s.io && cd $GOPATH/src/k8s.io    \
   && git clone --depth 1 -b release-$K8S_VERSION $K8S_SOURCE \
-  && cd kubernetes/ && make all WHAT=cmd/kubectl GOFLAGS=-v
+  && cd kubernetes/
+
+RUN [[ -n "$( echo $VERSION | grep -v no-make )" ]] && make all WHAT=cmd/kubectl GOFLAGS=-v || echo -e "\n\n-> ! Skipped k8s build ! <-\n\n"
