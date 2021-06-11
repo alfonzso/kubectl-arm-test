@@ -1,23 +1,12 @@
+ARG KUBECTL_BIN_PATH=/go/src/k8s.io/kubernetes/_output/local/go/bin
+
 FROM arm32v6/golang:alpine3.12 as build
-# FROM arm32v6/golang:alpine3.12
 
 # Copy downloaded architecture emulation static binary
 COPY qemu-arm-static /usr/bin/
 
-# Create appuser so application does not run as root in final container
-# See https://stackoverflow.com/a/55757473/12429735
-# ENV USER=appuser
-# ENV UID=10001
-# RUN adduser \
-#   --disabled-password \
-#   --gecos "" \
-#   --home "/nonexistent" \
-#   --shell "/sbin/nologin" \
-#   --no-create-home \
-#   --uid "${UID}" \
-#   "${USER}"
-
 ARG VERSION
+ARG KUBECTL_BIN_PATH
 ENV K8S_VERSION=1.21
 ENV K8S_SOURCE=https://github.com/kubernetes/kubernetes
 
@@ -29,25 +18,18 @@ RUN set -ex                                                  \
   && mkdir -p $GOPATH/src/k8s.io && cd $GOPATH/src/k8s.io    \
   && git clone --depth 1 -b release-$K8S_VERSION $K8S_SOURCE
 
-# RUN cd $GOPATH/src/k8s.io/kubernetes/ && make all WHAT=cmd/kubectl GOFLAGS=-v
-
 RUN [[ -n "$( echo $VERSION | grep -v no-make )" ]] && ( cd $GOPATH/src/k8s.io/kubernetes/ && make all WHAT=cmd/kubectl GOFLAGS=-v ) || echo -e "\n\n-> ! Skipped k8s build ! <-\n\n"
 
-# RUN mkdir -p /go/src/k8s.io/kubernetes/_output/local/go/bin/
-# RUN cp /usr/bin/git /go/src/k8s.io/kubernetes/_output/local/go/bin/kubectl
-# RUN echo "--> $(git version)"
-# RUN which git
-# RUN ls /go/src/k8s.io/kubernetes/_output/local/go/bin/kubectl
-# RUN /go/src/k8s.io/kubernetes/_output/local/go/bin/kubectl version
+RUN [[ -n "$( echo $VERSION | grep no-make )" ]]         && \
+  mkdir -p ${KUBECTL_BIN_PATH} && cd ${KUBECTL_BIN_PATH} && \
+  echo 'package main; import "fmt"; func main() { fmt.Println("hello world") }' | tee ${KUBECTL_BIN_PATH}/kubectl.go | go build ${KUBECTL_BIN_PATH}/kubectl.go \
+  || echo -e "\n\n-> ! Skipped go hello-world build ! <-\n\n"
 
 ###############################################################################
 # final stage
 FROM arm32v6/alpine:3.12
+ARG KUBECTL_BIN_PATH
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-# COPY --from=build /etc/passwd /etc/passwd
-# COPY --from=build /etc/group /etc/group
-# USER appuser:appuser
-
-COPY --from=build /go/src/k8s.io/kubernetes/_output/local/go/bin/kubectl /kubectl
+COPY --from=build ${KUBECTL_BIN_PATH}/kubectl /kubectl
 
 ENTRYPOINT ["/kubectl"]

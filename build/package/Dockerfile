@@ -1,6 +1,9 @@
+ARG KUBECTL_BIN_PATH=/go/src/k8s.io/kubernetes/_output/local/go/bin
+
 FROM golang:alpine3.12 as build
 
 ARG VERSION
+ARG KUBECTL_BIN_PATH
 ENV K8S_VERSION=1.21
 ENV K8S_SOURCE=https://github.com/kubernetes/kubernetes
 
@@ -14,10 +17,16 @@ RUN set -ex                                                  \
 
 RUN [[ -n "$( echo $VERSION | grep -v no-make )" ]] && ( cd $GOPATH/src/k8s.io/kubernetes/ && make all WHAT=cmd/kubectl GOFLAGS=-v ) || echo -e "\n\n-> ! Skipped k8s build ! <-\n\n"
 
+RUN [[ -n "$( echo $VERSION | grep no-make )" ]]         && \
+  mkdir -p ${KUBECTL_BIN_PATH} && cd ${KUBECTL_BIN_PATH} && \
+  echo 'package main; import "fmt"; func main() { fmt.Println("hello world") }' | tee ${KUBECTL_BIN_PATH}/kubectl.go | go build ${KUBECTL_BIN_PATH}/kubectl.go \
+  || echo -e "\n\n-> ! Skipped go hello-world build ! <-\n\n"
+
 ###############################################################################
 # final stage
 FROM alpine:3.12
+ARG KUBECTL_BIN_PATH
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=build /go/src/k8s.io/kubernetes/_output/local/go/bin/kubectl /kubectl
+COPY --from=build ${KUBECTL_BIN_PATH}/kubectl /kubectl
 
 ENTRYPOINT ["/kubectl"]
