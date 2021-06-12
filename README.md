@@ -5,6 +5,14 @@ More precisely
 * linux/arm/v7
 * linux/arm64/v8
 
+## About kubectl
+Source code pulled from here ( with this command ) :
+```shell
+git clone --depth 1 -b release-1.21 https://github.com/kubernetes/kubernetes
+```
+So kubectl version will be 1.21+ <br>
+For more information please read Dockerfiles [here](https://github.com/alfonzso/kubectl-mutli-arch/tree/master/build/package).
+
 ## Usage
 ### Test the binary only, and print kubectl version
 ```
